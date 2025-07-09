@@ -8,9 +8,16 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Add this block to load keystore properties
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace "com.example.reword_frontend"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -25,25 +32,54 @@ android {
 
     defaultConfig {
         applicationId "com.example.reword_frontend"
-        // Ensuring minSdk is at least 21 for notification features
-        minSdk = 21 
-        targetSdk = 33 // Updated targetSdk version to 33
+        minSdk = 23
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    buildTypes {
+    // Add signing configs if needed
+    signingConfigs {
         release {
-            minifyEnabled true  // Enable Proguard for better optimization
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug  // Adjust this if using a release key
+            if (keystoreProperties.containsKey('storeFile')) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
-}
 
-dependencies {
-    // Desugaring library for Java 8+ methods
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    buildTypes {
+        release {
+            // Fixed: Enable code shrinking when resource shrinking is enabled
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig keystoreProperties.containsKey('storeFile') ? signingConfigs.release : null
+        }
+    }
+    
+    // Add dependencies needed by FlutterFragmentActivity
+    dependencies {
+        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+        implementation "androidx.fragment:fragment-ktx:1.5.5"
+    }
+    
+    // Simplified packaging options
+    packagingOptions {
+        resources {
+            excludes += [
+                '**/README.md',
+                '**/META-INF/{AL2.0,LGPL2.1}'
+            ]
+        }
+    }
+    
+    lintOptions {
+        disable 'InvalidPackage'
+        checkReleaseBuilds false
+    }
 }
 
 flutter {

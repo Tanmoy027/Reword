@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'dart:convert';
-
 import 'package:flutter/services.dart';
-
 import '../welcome/choice_page.dart';
 
 class PasswordController extends GetxController {
   var isPasswordHidden = true.obs;
   var isConfirmPasswordHidden = true.obs;
   var isLoading = false.obs;
-  var resetToken = ''.obs;
+  var resetCode = ''.obs; // Changed from resetToken to resetCode
 }
 
 class CreateNewPasswordScreen extends StatefulWidget {
   final String email;
-  final String? initialToken;
+  final String? initialCode; // Changed from initialToken to initialCode
+  final String role;
 
-  const CreateNewPasswordScreen(
-      {super.key, required this.email, this.initialToken});
+  const CreateNewPasswordScreen({
+    super.key,
+    required this.email,
+    this.initialCode, // Changed from initialToken to initialCode
+    required this.role,
+  });
 
   @override
   _CreateNewPasswordScreenState createState() =>
@@ -31,24 +34,27 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
-  final TextEditingController tokenController = TextEditingController();
+  final TextEditingController codeController =
+      TextEditingController(); // Changed from tokenController
+  final dio = Dio();
 
   @override
   void initState() {
     super.initState();
-    // If initial token is provided, pre-fill the token field
-    if (widget.initialToken != null) {
-      tokenController.text = widget.initialToken!;
-      controller.resetToken.value = widget.initialToken!;
+    // If initial code is provided, pre-fill the code field
+    if (widget.initialCode != null && widget.initialCode!.isNotEmpty) {
+      codeController.text = widget.initialCode!;
+      controller.resetCode.value =
+          widget.initialCode!; // Changed from resetToken to resetCode
     }
   }
 
   Future<void> resetPassword() async {
-    // Validate token
-    if (tokenController.text.isEmpty) {
+    // Validate code
+    if (codeController.text.isEmpty) {
       Get.snackbar(
         'Error',
-        'Please enter the reset token',
+        'Please enter the reset code', // Changed from reset token to reset code
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -83,53 +89,72 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
     controller.isLoading.value = true;
 
     try {
-      // Make API call to reset password
-      final response = await http.post(
-        Uri.parse(
-            'https://voucher-app-backend.vercel.app/api/auth/reset-password'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'token': tokenController.text.trim(), // Use token from text field
+      // Print debug info
+      print('Resetting password');
+      print(
+          'Code: ${codeController.text.trim()}'); // Changed from Token to Code
+      print('Role: ${widget.role}');
+
+      // Determine the endpoint based on role
+      String endpoint = widget.role == 'seller'
+          ? 'https://voucher-app-backend.vercel.app/api/auth/seller/reset-password'
+          : 'https://voucher-app-backend.vercel.app/api/auth/reset-password';
+
+      // Make API call to reset password using Dio
+      final response = await dio.post(
+        endpoint,
+        data: {
+          'code': codeController.text.trim(), // Changed from token to code
           'newPassword': passwordController.text.trim(),
-        }),
+          'role': widget.role, // Added role parameter
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
       );
 
-      // Print the response for debugging
-      print('Reset Password Response: ${response.body}');
-      print('Reset Token Used: ${tokenController.text}');
+      // Print response for debugging
+      print('Response status code: ${response.statusCode}');
+      print('Response data: ${response.data}');
 
       // Handle response
-      if (response.statusCode == 200) {
-        // Password reset successful
-        Get.snackbar(
-          'Success',
-          'Password has been reset successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFF158482),
-          colorText: Colors.white,
-        );
+      // Password reset successful
+      Get.snackbar(
+        'Success',
+        'Password has been reset successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF158482),
+        colorText: Colors.white,
+      );
 
-        // Navigate to login screen
-        Get.offAll(() => ChoicePage());
-      } else {
-        // Parse error message from the response
-        final errorBody = json.decode(response.body);
-        Get.snackbar(
-          'Error',
-          errorBody['message'] ?? 'Failed to reset password',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+      // Navigate to login screen
+      Get.offAll(() => ChoicePage());
+    } on DioException catch (e) {
+      print('Dio error: ${e.message}');
+      print('Response: ${e.response?.data}');
+
+      String errorMessage = 'Failed to reset password';
+      if (e.response != null && e.response!.data != null) {
+        if (e.response!.data is Map && e.response!.data['message'] != null) {
+          errorMessage = e.response!.data['message'];
+        }
       }
+
+      Get.snackbar(
+        'Error',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } catch (e) {
       // Handle network or other errors
       print('Error resetting password: $e');
       Get.snackbar(
         'Error',
-        'An error occurred. Please check your internet connection.',
+        'An error occurred: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -175,9 +200,9 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
               ),
               SizedBox(height: 30),
 
-              // Display email (optional)
+              // Display account type and email
               Text(
-                "Reset password for: ${widget.email}",
+                "Reset password for ${widget.role} account: ${widget.email}",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -185,18 +210,20 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
               ),
               SizedBox(height: 20),
 
-              // Reset Token Input
-              Text("Reset Token",
+              // Reset Code Input (changed from Token)
+              Text("Reset Code",
                   style: TextStyle(fontSize: 16, color: Colors.black)),
               SizedBox(height: 10),
               TextField(
-                controller: tokenController,
+                controller: codeController, // Changed from tokenController
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.grey.shade200,
-                  hintText: "Enter reset token from email",
+                  hintText:
+                      "Enter reset code from email", // Changed from token to code
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.paste),
@@ -205,7 +232,7 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
                       final clipboardData =
                           await Clipboard.getData(Clipboard.kTextPlain);
                       if (clipboardData != null && clipboardData.text != null) {
-                        tokenController.text = clipboardData.text!;
+                        codeController.text = clipboardData.text!;
                       }
                     },
                   ),
@@ -224,17 +251,18 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
                   style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Color(0xFF4F4F4F),
+                    fillColor: Colors.grey.shade200,
                     hintText: "Enter your password here",
-                    hintStyle: TextStyle(color: Colors.white70),
+                    hintStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.isPasswordHidden.value
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: Colors.white70,
+                        color: Colors.grey,
                       ),
                       onPressed: () {
                         controller.isPasswordHidden.toggle();
@@ -257,17 +285,18 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
                   style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Color(0xFF4F4F4F),
+                    fillColor: Colors.grey.shade200,
                     hintText: "Re-enter your password here",
-                    hintStyle: TextStyle(color: Colors.white70),
+                    hintStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.isConfirmPasswordHidden.value
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: Colors.white70,
+                        color: Colors.grey,
                       ),
                       onPressed: () {
                         controller.isConfirmPasswordHidden.toggle();
@@ -286,6 +315,9 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF158482), // Button color
                         padding: EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                       onPressed:
                           controller.isLoading.value ? null : resetPassword,

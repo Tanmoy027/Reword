@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../bespoke/bespoke_experience.dart';
+import '../../privacy_policy/privacy_policy.dart';
+import '../../forgotpassword/forgot_Pass.dart'; // Add this import
 
 import '../usernavbar/usernavigationbar.dart';
 import 'profile_controlleruser.dart';
 
 import 'userprofileupdate.dart'; // Import the user profile update page
+// Import the legal pages screen
 
 class ProfilePageuser extends StatelessWidget {
   final ProfileControlleruser controller = Get.put(ProfileControlleruser());
@@ -80,11 +83,12 @@ class ProfilePageuser extends StatelessWidget {
               Get.to(() =>
                   ProfileUpdateUser()); // Navigate to the ProfileUpdateUser page
             }),
-            _buildMenuItem(Icons.settings, "General Settings", () {
-              Get.snackbar("Settings", "General settings clicked");
+
+            _buildMenuItem(Icons.security, "Privacy Policy", () {
+              Get.to(() => const LegalPagesScreen());
             }),
-            _buildMenuItem(Icons.security, "Account Security", () {
-              Get.snackbar("Security", "Account security clicked");
+            _buildMenuItem(Icons.lock_reset, "Reset Password", () {
+              Get.to(() => ForgotPasswordScreen());
             }),
             SizedBox(height: 10),
             _buildMenuItem(Icons.logout, "Sign Out", () {

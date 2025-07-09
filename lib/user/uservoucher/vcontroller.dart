@@ -1,4 +1,3 @@
-// vcontroller.dart
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +17,11 @@ class VController extends GetxController {
 
   // List of vouchers (wrapped as `Vm`) for display in VDashboard
   var voucherss = <Vm>[].obs;
+  // All vouchers without filtering
+  var allVouchers = <Vm>[].obs;
+
+  // Selected category filter
+  var selectedCategory = 'All'.obs;
 
   var isLoading = false.obs;
   var errorMessage = ''.obs;
@@ -28,6 +32,19 @@ class VController extends GetxController {
   void onInit() {
     super.onInit();
     fetchStoreVouchers();
+  }
+
+  // Filter vouchers by category
+  void filterByCategory(String category) {
+    selectedCategory.value = category;
+
+    if (category == 'All') {
+      voucherss.assignAll(allVouchers);
+    } else {
+      final filtered =
+          allVouchers.where((voucher) => voucher.category == category).toList();
+      voucherss.assignAll(filtered);
+    }
   }
 
   // GET /api/vouchers/store/:storeId
@@ -79,6 +96,7 @@ class VController extends GetxController {
           final expiryDate = voucherJson['expiryDate'] ?? '';
           final isActive =
               (voucherJson['voucherStatus'] ?? '').toLowerCase() == 'active';
+          final category = voucherJson['category'] ?? '';
 
           // Process first price option - always add this voucher
           if (priceOptions.isNotEmpty) {
@@ -105,6 +123,7 @@ class VController extends GetxController {
               isActive: isActive,
               inc: () {},
               dec: () {},
+              category: category, // Add the category to the Vm
             ));
           }
 
@@ -136,13 +155,15 @@ class VController extends GetxController {
                 isActive: isActive,
                 inc: () {},
                 dec: () {},
+                category: category, // Add the category to the Vm
               ));
             }
           }
         }
 
-        // Update the observable list of vouchers
-        voucherss.assignAll(voucherList);
+        // Update the observable lists of vouchers
+        allVouchers.assignAll(voucherList);
+        voucherss.assignAll(voucherList); // Initially show all vouchers
       } else {
         errorMessage.value =
             'Failed to load store vouchers. Status: ${response.statusCode}';

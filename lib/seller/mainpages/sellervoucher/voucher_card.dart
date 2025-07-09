@@ -30,13 +30,13 @@ class VoucherCard extends GetView<VoucherController> {
       ),
       child: Column(
         children: [
-          // Top: Title + Delete icon
+          // Top: Title + Delete icon (now removed)
           Container(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title & Trash
+                // Title (delete icon removed)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -49,11 +49,7 @@ class VoucherCard extends GetView<VoucherController> {
                         ),
                       ),
                     ),
-                    IconButton(
-                      color: Colors.grey[600],
-                      onPressed: () => controller.deleteVoucher(voucher.id),
-                      icon: const Icon(Icons.delete_outline),
-                    ),
+                    // Delete icon removed
                   ],
                 ),
                 const SizedBox(height: 16),

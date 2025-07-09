@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:reword_frontend/login/service/user_service.dart';
@@ -9,8 +10,7 @@ class VoucherController extends GetxController {
   final RxInt selectedMetricIndex = 0.obs;
   final RxList<VoucherModel> vouchers = <VoucherModel>[].obs;
   final RxBool isLoading = false.obs;
-  final RxBool isCategoryLoading =
-      false.obs; // New loading state for category switch
+  final RxBool isCategoryLoading = false.obs;
   final RxString errorMessage = ''.obs;
 
   final UserService _userService = UserService();
@@ -46,6 +46,10 @@ class VoucherController extends GetxController {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        // Debug the response
+        print('Fetch vouchers response: ${response.body}');
+
         vouchers.assignAll(
           (data['vouchers'] as List)
               .map((v) => VoucherModel.fromJson(v))
@@ -55,6 +59,75 @@ class VoucherController extends GetxController {
       } else {
         errorMessage.value =
             'Failed to load vouchers. Status: ${response.statusCode}\n${response.body}';
+      }
+    } catch (e) {
+      errorMessage.value = 'Error: ${e.toString()}';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchExpiredVouchers() async {
+    isLoading.value = true;
+    errorMessage.value = '';
+
+    final token = await _userService.getToken();
+    if (token == null || token.isEmpty) {
+      errorMessage.value =
+          'Authentication token not found. Please login again.';
+      isLoading.value = false;
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://voucher-app-backend.vercel.app/api/vouchers/seller/expired'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Debug the response
+        print('Fetch expired vouchers response: ${response.body}');
+
+        // Make sure we're checking both potential structures
+        if (data.containsKey('expiredVouchers') &&
+            data['expiredVouchers'] is List) {
+          vouchers.assignAll(
+            (data['expiredVouchers'] as List)
+                .map((v) => VoucherModel.fromJson(v))
+                .toList(),
+          );
+        } else if (data.containsKey('vouchers') && data['vouchers'] is List) {
+          vouchers.assignAll(
+            (data['vouchers'] as List)
+                .map((v) => VoucherModel.fromJson(v))
+                .toList(),
+          );
+        } else {
+          // If structure is different, show empty list and debug
+          print('Unexpected response structure: $data');
+          vouchers.clear();
+        }
+        updateVoucherCounts();
+
+        // Show feedback to the user
+        if (vouchers.isEmpty) {
+          Get.snackbar(
+            'Expired Vouchers',
+            'No expired vouchers found',
+            backgroundColor: Colors.amber.withOpacity(0.7),
+            duration: const Duration(seconds: 2),
+          );
+        }
+      } else {
+        errorMessage.value =
+            'Failed to load expired vouchers. Status: ${response.statusCode}\n${response.body}';
       }
     } catch (e) {
       errorMessage.value = 'Error: ${e.toString()}';
@@ -91,15 +164,10 @@ class VoucherController extends GetxController {
         // "Add new Voucher" – your UI will show Add popup
         break;
       case 2:
-        // Expired Vouchers
-        filterExpiredVouchers();
+        // Expired Vouchers - fetch from the server
+        fetchExpiredVouchers();
         break;
     }
-  }
-
-  void filterExpiredVouchers() {
-    // Filter in-memory to show only non-active
-    vouchers.assignAll(vouchers.where((v) => !v.isActive).toList());
   }
 
   void addVoucher(VoucherModel voucher) {
@@ -107,52 +175,7 @@ class VoucherController extends GetxController {
     updateVoucherCounts();
   }
 
-  /// DELETE a voucher by ID:
-  /// -> If the real route is `DELETE /api/vouchers/<id>` instead of `delete/<id>`,
-  ///    adjust the Uri.parse() below.
-  Future<void> deleteVoucher(String voucherId) async {
-    final token = await _userService.getToken();
-    if (token == null) {
-      Get.snackbar('Error', 'No token found. Please login again.');
-      return;
-    }
-
-    try {
-      // If the route is actually `DELETE /api/vouchers/<id>`,
-      // then remove "/delete" from below:
-      final response = await http.delete(
-        Uri.parse(
-          'https://voucher-app-backend.vercel.app/api/vouchers/delete/$voucherId',
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Remove from local list & re-fetch to ensure we see the current data
-        vouchers.removeWhere((v) => v.id == voucherId);
-        updateVoucherCounts();
-
-        // Optional but recommended: fetch again from server
-        await fetchVouchers();
-
-        Get.snackbar('Deleted', 'Voucher deleted successfully');
-      } else {
-        Get.snackbar(
-          'Delete Failed',
-          'Status: ${response.statusCode}\n${response.body}',
-        );
-      }
-    } catch (e) {
-      Get.snackbar('Error', e.toString());
-    }
-  }
-
-  /// Mark a voucher as expired (PUT /api/vouchers/:id with { voucherStatus: "expired" })
-  /// -> If your server uses a different field or route to expire,
-  ///    change the body or endpoint accordingly.
+  /// Mark a voucher as expired
   Future<void> expireVoucher(String voucherId) async {
     final token = await _userService.getToken();
     if (token == null) {
@@ -161,40 +184,73 @@ class VoucherController extends GetxController {
     }
 
     try {
+      // Show loading indicator
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(),
+        ),
+        barrierDismissible: false,
+      );
+
       final response = await http.put(
         Uri.parse(
-          'https://voucher-app-backend.vercel.app/api/vouchers/$voucherId',
+          'https://voucher-app-backend.vercel.app/api/vouchers/seller/expire/$voucherId',
         ),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: json.encode({
-          'voucherStatus': 'expired',
-        }),
       );
 
+      // Close loading dialog
+      Get.back();
+
       if (response.statusCode == 200) {
-        // Mark local item as expired
+        // Debug the response
+        print('Expire voucher response: ${response.body}');
+
+        // Update the voucher status in the local list
         final index = vouchers.indexWhere((v) => v.id == voucherId);
         if (index != -1) {
           vouchers[index].voucherStatus = 'expired';
           vouchers[index].isActive = false;
+          vouchers.refresh(); // Force UI update
         }
         updateVoucherCounts();
 
-        // Also re-fetch from server to ensure data is correct on refresh
-        await fetchVouchers();
+        // Refetch vouchers if we're in the "All Vouchers" view
+        if (selectedMetricIndex.value == 0) {
+          await fetchVouchers();
+        } else if (selectedMetricIndex.value == 2) {
+          // If we're in the expired vouchers view, refresh that list
+          await fetchExpiredVouchers();
+        }
 
-        Get.snackbar('Voucher Expired', 'Voucher marked as expired');
+        Get.snackbar(
+          'Success',
+          'Voucher marked as expired',
+          backgroundColor: Colors.green.withOpacity(0.7),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
       } else {
         Get.snackbar(
           'Expire Failed',
           'Status: ${response.statusCode}\n${response.body}',
+          backgroundColor: Colors.red.withOpacity(0.7),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
         );
       }
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      Get.back(); // Close loading dialog if there's an error
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        backgroundColor: Colors.red.withOpacity(0.7),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 }

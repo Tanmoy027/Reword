@@ -5,8 +5,8 @@ import 'package:reword_frontend/forgotpassword/forgot_Pass.dart';
 import 'package:reword_frontend/seller/sellerreigistration/sellerregistration1.dart';
 import 'package:reword_frontend/login/service/auth_service.dart';
 import 'package:reword_frontend/login/service/user_service.dart';
-
-// 1. Import Firebase Messaging
+import 'package:reword_frontend/privacy_policy/privacy_policy.dart';
+// Import Firebase Messaging
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class logainseller extends StatefulWidget {
@@ -61,11 +61,11 @@ class _logainsellerState extends State<logainseller> {
       return;
     }
 
-    // 2. Fetch the FCM token for the seller
+    // Fetch the FCM token for the seller
     String? fcmToken = await FirebaseMessaging.instance.getToken();
     print("Seller FCM Token: $fcmToken");
 
-    // 3. Pass fcmToken to auth_service
+    // Pass fcmToken to auth_service
     final response = await _authService.login(
       email: email,
       password: password,
@@ -84,6 +84,43 @@ class _logainsellerState extends State<logainseller> {
       Get.snackbar(
         "Login Failed",
         response?["error"] ?? "Please check your credentials",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  // Handle Google Sign In for sellers
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Call the Google Sign In method with seller role
+      final response = await _authService.signInWithGoogleSeller();
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response != null && !response.containsKey("error")) {
+        // If login is successful, navigate to seller home
+        Get.offAllNamed('/sellerHome');
+      } else {
+        Get.snackbar(
+          "Google Sign In Failed",
+          response?["error"] ?? "Please try again later",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      Get.snackbar(
+        "Authentication Error",
+        "Failed to sign in with Google: ${e.toString().substring(0, e.toString().length > 100 ? 100 : e.toString().length)}",
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -208,10 +245,15 @@ class _logainsellerState extends State<logainseller> {
                           ),
                           const SizedBox(width: 5),
                           Expanded(
-                            child: Text(
-                              "I agree to the Terms & Conditions and Privacy Policy",
-                              style: TextStyle(
-                                color: Colors.grey[700],
+                            child: GestureDetector(
+                              onTap: () =>
+                                  Get.to(() => const LegalPagesScreen()),
+                              child: Text(
+                                "I agree to the Terms & Conditions and Privacy Policy",
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  decoration: TextDecoration.underline,
+                                ),
                               ),
                             ),
                           ),
@@ -292,7 +334,9 @@ class _logainsellerState extends State<logainseller> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildSocialButton('assets/images/Google.png', () {}),
+                          _buildSocialButton('assets/images/Google.png',
+                              _handleGoogleSignIn // Connect Google button to handler
+                              ),
                           const SizedBox(width: 15),
                           _buildSocialButton('assets/images/Apple.png', () {}),
                           const SizedBox(width: 15),

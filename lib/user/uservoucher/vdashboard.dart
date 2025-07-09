@@ -1,5 +1,3 @@
-//dashboard.dart code
-
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -88,11 +86,9 @@ class VDashboard extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text('View all'),
-                          )
+                          const Spacer(),
+                          // Add filter buttons here
+                          _buildFilterButtons(),
                         ],
                       ),
                     ],
@@ -134,6 +130,37 @@ class VDashboard extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+
+  // New method to build filter buttons
+  Widget _buildFilterButtons() {
+    return Obx(() => Row(
+          children: [
+            _filterButton('All'),
+            const SizedBox(width: 8),
+            _filterButton('Excursion'),
+            const SizedBox(width: 8),
+            _filterButton('Experience'),
+          ],
+        ));
+  }
+
+  // Helper method to create a filter button
+  Widget _filterButton(String category) {
+    final isSelected = controller.selectedCategory.value == category;
+
+    return ElevatedButton(
+      onPressed: () => controller.filterByCategory(category),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.blue : Colors.grey.shade200,
+        foregroundColor: isSelected ? Colors.white : Colors.black87,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      child: Text(category),
     );
   }
 

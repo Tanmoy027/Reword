@@ -1,4 +1,3 @@
-// vm.dart
 import 'dart:ui';
 
 class Vm {
@@ -17,6 +16,7 @@ class Vm {
   final bool isActive;
   final VoidCallback inc;
   final VoidCallback dec;
+  final String category; // Added category field
 
   Vm({
     required this.id,
@@ -34,5 +34,6 @@ class Vm {
     required this.isActive,
     required this.inc,
     required this.dec,
+    this.category = '', // Default empty string
   });
 }

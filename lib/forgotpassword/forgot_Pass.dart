@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:reword_frontend/forgotpassword/create_new_pass.dart';
 
 class ForgotPasswordController extends GetxController {
   var email = ''.obs;
+  var role = 'buyer'.obs; // Default to 'buyer'
   var isLoading = false.obs;
 }
 
@@ -15,6 +15,7 @@ class ForgotPasswordScreen extends StatelessWidget {
   final ForgotPasswordController controller =
       Get.put(ForgotPasswordController());
   final TextEditingController emailController = TextEditingController();
+  final dio = Dio();
 
   Future<void> requestPasswordReset() async {
     // Validate email
@@ -33,52 +34,91 @@ class ForgotPasswordScreen extends StatelessWidget {
     controller.isLoading.value = true;
 
     try {
-      // Make API call to request password reset
-      final response = await http.post(
-        Uri.parse(
-            'https://voucher-app-backend.vercel.app/api/auth/request-password-reset'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
+      // Print debug info
+      print('Sending request to request-password-reset endpoint');
+      print('Email: ${emailController.text.trim()}');
+      print('Role: ${controller.role.value}');
+
+      // Determine the endpoint based on role
+      String endpoint = controller.role.value == 'seller'
+          ? 'https://voucher-app-backend.vercel.app/api/auth/seller/request-password-reset'
+          : 'https://voucher-app-backend.vercel.app/api/auth/request-password-reset';
+
+      // Set timeout to prevent long waiting
+      final response = await dio.post(
+        endpoint,
+        data: {
           'email': emailController.text.trim(),
-        }),
+          'role': controller.role.value,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+        ),
       );
 
-      // Handle response
-      if (response.statusCode == 200) {
-        // Parse the response body to get any additional information
-        final responseBody = json.decode(response.body);
+      // Print response for debugging
+      print('Response status code: ${response.statusCode}');
+      print('Response data: ${response.data}');
 
-        // Show success message
-        Get.snackbar(
-          'Success',
-          'Password reset link sent to your email',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFF158482),
-          colorText: Colors.white,
-        );
+      // Show success message
+      Get.snackbar(
+        'Success',
+        'Password reset link sent to your email',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF158482),
+        colorText: Colors.white,
+      );
 
-        // Navigate to Create New Password Screen
-        Get.to(() => CreateNewPasswordScreen(
-              email: emailController.text.trim(),
-            ));
+      // Navigate to Create New Password Screen
+      Get.to(() => CreateNewPasswordScreen(
+            email: emailController.text.trim(),
+            role: controller.role.value,
+          ));
+    } on DioException catch (e) {
+      print('Dio error: ${e.message}');
+      print('Response code: ${e.response?.statusCode}');
+      print('Response data: ${e.response?.data}');
+
+      String errorMessage;
+
+      if (e.response?.statusCode == 504) {
+        errorMessage =
+            'The server is taking too long to respond. Please try again later or contact support.';
+      } else if (e.response != null && e.response!.data != null) {
+        if (e.response!.data is Map && e.response!.data['message'] != null) {
+          errorMessage = e.response!.data['message'];
+        } else {
+          errorMessage = 'Failed to send password reset link';
+        }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMessage =
+            'Connection timed out. Please check your internet connection and try again.';
       } else {
-        // Parse error message from the response
-        final errorBody = json.decode(response.body);
-        Get.snackbar(
-          'Error',
-          errorBody['message'] ?? 'Failed to send password reset link',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        errorMessage =
+            'Failed to send password reset link. Please try again later.';
       }
-    } catch (e) {
-      // Handle network or other errors
+
       Get.snackbar(
         'Error',
-        'An error occurred. Please check your internet connection.',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+    } catch (e) {
+      // Handle other errors
+      print('Exception details: $e');
+
+      Get.snackbar(
+        'Error',
+        'Connection failed: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -122,6 +162,47 @@ class ForgotPasswordScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+
+            // Add role selector
+            const Text(
+              "Account Type",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Obx(() => Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title:
+                            const Text("Buyer", style: TextStyle(fontSize: 14)),
+                        value: "buyer",
+                        groupValue: controller.role.value,
+                        onChanged: (value) {
+                          controller.role.value = value!;
+                        },
+                        activeColor: const Color(0xFF158482),
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text("Seller",
+                            style: TextStyle(fontSize: 14)),
+                        value: "seller",
+                        groupValue: controller.role.value,
+                        onChanged: (value) {
+                          controller.role.value = value!;
+                        },
+                        activeColor: const Color(0xFF158482),
+                      ),
+                    ),
+                  ],
+                )),
+            const SizedBox(height: 16),
+
             const Text(
               "Email",
               style: TextStyle(

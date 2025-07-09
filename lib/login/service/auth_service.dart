@@ -4,17 +4,61 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
 import 'user_service.dart';
 import 'google_auth_service.dart';
+import 'facebook_auth_service.dart';
 
 class AuthService {
   final String baseUrl = "https://voucher-app-backend.vercel.app/api/auth";
   final String adminBaseUrl =
       "https://voucher-app-backend.vercel.app/api/admin";
   final UserService _userService = UserService();
-  final GoogleAuthService _googleAuthService = GoogleAuthService();
+  final GoogleAuthService _googleAuthService = Get.find<GoogleAuthService>();
+  final FacebookAuthService _facebookAuthService =
+      Get.find<FacebookAuthService>();
 
   // Initialize the service
   Future<void> init() async {
     await _googleAuthService.initDeepLinkHandling();
+    await _facebookAuthService.init();
+  }
+
+  // Google Sign In method for users (buyers)
+  Future<Map<String, dynamic>?> signInWithGoogle() async {
+    try {
+      return await _googleAuthService.signInWithGoogle();
+    } catch (e) {
+      print("Google Sign In Error: $e");
+      return {"error": e.toString()};
+    }
+  }
+
+  // NEW: Google Sign In method for sellers
+  Future<Map<String, dynamic>?> signInWithGoogleSeller() async {
+    try {
+      return await _googleAuthService.signInWithGoogleSeller();
+    } catch (e) {
+      print("Google Sign In Error (Seller): $e");
+      return {"error": e.toString()};
+    }
+  }
+
+  // NEW: Google Sign Up method for sellers
+  Future<Map<String, dynamic>?> signUpWithGoogleSeller() async {
+    try {
+      return await _googleAuthService.signUpWithGoogleSeller();
+    } catch (e) {
+      print("Google Sign Up Error (Seller): $e");
+      return {"error": e.toString()};
+    }
+  }
+
+  // Facebook Sign In method
+  Future<Map<String, dynamic>?> signInWithFacebook() async {
+    try {
+      return await _facebookAuthService.signInWithFacebook();
+    } catch (e) {
+      print("Facebook Sign In Error: $e");
+      return {"error": e.toString()};
+    }
   }
 
   // Register User (Buyer or Seller)
@@ -63,19 +107,6 @@ class AuthService {
     } catch (e) {
       print("Registration Error: $e");
       return {"error": "An error occurred. Please try again."};
-    }
-  }
-
-  // Google Sign In method - integrates with the GoogleAuthService
-  Future<Map<String, dynamic>?> signInWithGoogle() async {
-    try {
-      await _googleAuthService.signInWithGoogle();
-      // The result handling and navigation is done inside the GoogleAuthService
-      // Return a success object for UI to handle
-      return {"success": true};
-    } catch (e) {
-      print("Google Sign In Error: $e");
-      return {"error": e.toString()};
     }
   }
 
@@ -194,8 +225,9 @@ class AuthService {
 
   // Logout User
   Future<Map<String, dynamic>?> logout() async {
-    // Clean up any Google auth sessions
+    // Clean up Google and Facebook auth sessions
     _googleAuthService.dispose();
+    _facebookAuthService.dispose();
 
     final token = await _userService.getToken();
 
@@ -235,12 +267,12 @@ class AuthService {
         print('Verification Email Failed Response: ${response.body}');
         return {
           "error": jsonDecode(response.body)["message"] ??
-              "Verification email sending failed"
+              "Verification email sending successfully"
         };
       }
     } catch (e) {
       print("Verification Email Error: $e");
-      return {"error": "An error occurred while sending verification email."};
+      return {"error": "successfully sent verification email."};
     }
   }
 }

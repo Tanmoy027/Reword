@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:reword_frontend/login/service/auth_service.dart';
 import 'package:reword_frontend/login/service/google_auth_service.dart';
+import 'package:reword_frontend/login/service/facebook_auth_service.dart'; // Add this import
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -21,8 +22,11 @@ class _RegistrationState extends State<Registration> {
 
   final AuthService _authService = AuthService();
   final GoogleAuthService _googleAuthService = Get.find<GoogleAuthService>();
+  final FacebookAuthService _facebookAuthService =
+      Get.find<FacebookAuthService>(); // Add this
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isFacebookLoading = false; // Add this
   bool _termsAccepted = false;
 
   @override
@@ -49,8 +53,15 @@ class _RegistrationState extends State<Registration> {
     });
 
     try {
-      await _googleAuthService.signInWithGoogle();
-      // Navigation is handled by GoogleAuthService
+      final result = await _authService.signInWithGoogle();
+
+      if (result != null && result.containsKey('error')) {
+        Get.snackbar(
+          "Google Sign-Up Error",
+          result['error'],
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } catch (e) {
       print("Google Sign-up error: $e");
       Get.snackbar(
@@ -61,6 +72,45 @@ class _RegistrationState extends State<Registration> {
     } finally {
       setState(() {
         _isGoogleLoading = false;
+      });
+    }
+  }
+
+  // Handle Facebook sign up
+  Future<void> _handleFacebookSignUp() async {
+    if (!_termsAccepted) {
+      Get.snackbar(
+        "Terms Not Accepted",
+        "You must accept the terms and conditions to sign up",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    setState(() {
+      _isFacebookLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithFacebook();
+
+      if (result != null && result.containsKey('error')) {
+        Get.snackbar(
+          "Facebook Sign-Up Error",
+          result['error'],
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      print("Facebook Sign-up error: $e");
+      Get.snackbar(
+        "Facebook Sign-Up Error",
+        "An unexpected error occurred. Please try again.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      setState(() {
+        _isFacebookLoading = false;
       });
     }
   }
@@ -323,7 +373,9 @@ class _RegistrationState extends State<Registration> {
                         const SizedBox(width: 15),
                         _buildSocialButton('assets/images/Apple.png', () {}),
                         const SizedBox(width: 15),
-                        _buildSocialButton('assets/images/Facebook.png', () {}),
+                        _buildSocialButton(
+                            'assets/images/Facebook.png', _handleFacebookSignUp,
+                            isLoading: _isFacebookLoading),
                       ],
                     ),
                     const SizedBox(height: 20),

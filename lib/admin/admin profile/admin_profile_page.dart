@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../profile/profile_controller.dart';
 import '../admin naviagtionbar/admin_bottom_navigation.dart';
+import '../admin_notification/admin_notification_page.dart'; // Add this import
 
 class AdminProfilePage extends StatelessWidget {
   final ProfileController controller = Get.put(ProfileController());
@@ -65,6 +66,10 @@ class AdminProfilePage extends StatelessWidget {
             Obx(() => Text(controller.userEmail.value,
                 style: TextStyle(color: Colors.grey))),
             SizedBox(height: 20),
+            // Add Send Notification button
+            _buildMenuItem(Icons.notifications_active, "Send Notification", () {
+              Get.to(() => AdminNotificationPage());
+            }),
             _buildMenuItem(Icons.logout, "Sign Out", () {
               controller.logout();
             }, isLogout: true),

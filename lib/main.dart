@@ -19,6 +19,7 @@ import 'package:reword_frontend/admin/pages/adminlogin.dart';
 import 'package:reword_frontend/admin/pages/sellerdasbordaccess.dart';
 import 'package:reword_frontend/login/service/user_service.dart';
 import 'package:reword_frontend/login/service/google_auth_service.dart';
+import 'package:reword_frontend/login/service/facebook_auth_service.dart'; // Add this import
 import 'package:reword_frontend/notification/notificationpage.dart';
 import 'package:reword_frontend/seller/mainpages/coustomer/customer_details_page.dart';
 import 'package:reword_frontend/user/order/userorderui.dart';
@@ -29,6 +30,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+//import 'forgotpassword/deep_link_service.dart';
 import 'user/favorites/my_favorites_page.dart';
 import 'user/favorites/my_favorites_controller.dart';
 
@@ -60,6 +62,10 @@ void main() async {
   // Add GoogleAuthService to GetX
   final googleAuthService = GoogleAuthService();
   Get.put<GoogleAuthService>(googleAuthService, permanent: true);
+
+  // Add FacebookAuthService to GetX
+  final facebookAuthService = FacebookAuthService();
+  Get.put<FacebookAuthService>(facebookAuthService, permanent: true);
 
   // Check if user is logged in
   bool isLoggedIn = await userService.isLoggedIn();
@@ -148,3 +154,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+

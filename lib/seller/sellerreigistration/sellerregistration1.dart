@@ -70,6 +70,137 @@ class _sellerRegistrationState extends State<sellerRegistration> {
     return null; // No errors
   }
 
+  // Method to handle Google Sign Up for sellers
+  Future<void> _handleGoogleSignUp() async {
+    if (!_isAgreed) {
+      Get.snackbar(
+        "Terms Not Accepted",
+        "You must agree to the Terms & Conditions to continue",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Call Google Sign Up method with seller role
+      final response = await _authService.signUpWithGoogleSeller();
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response != null && !response.containsKey("error")) {
+        // If registration is successful, navigate to seller home
+        Get.offAllNamed('/sellerHome');
+        Get.snackbar(
+          "Success",
+          "Google registration successful!",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar(
+          "Google Sign Up Failed",
+          response?["error"] ?? "Please try again later",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      Get.snackbar(
+        "Authentication Error",
+        "Failed to sign up with Google: ${e.toString().substring(0, e.toString().length > 100 ? 100 : e.toString().length)}",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  // Method to handle Facebook Sign Up for sellers
+  Future<void> _handleFacebookSignUp() async {
+    if (!_isAgreed) {
+      Get.snackbar(
+        "Terms Not Accepted",
+        "You must agree to the Terms & Conditions to continue",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // In a real implementation, you would call a Facebook auth method here
+      // For now, just show a notification
+      setState(() {
+        _isLoading = false;
+      });
+
+      Get.snackbar(
+        "Facebook Sign Up",
+        "Facebook registration for sellers coming soon!",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      Get.snackbar(
+        "Authentication Error",
+        "Failed to sign up with Facebook",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  // Method to handle Apple Sign Up for sellers
+  Future<void> _handleAppleSignUp() async {
+    if (!_isAgreed) {
+      Get.snackbar(
+        "Terms Not Accepted",
+        "You must agree to the Terms & Conditions to continue",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // In a real implementation, you would call an Apple auth method here
+      // For now, just show a notification
+      setState(() {
+        _isLoading = false;
+      });
+
+      Get.snackbar(
+        "Apple Sign Up",
+        "Apple registration for sellers coming soon!",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      Get.snackbar(
+        "Authentication Error",
+        "Failed to sign up with Apple",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
   Widget _buildSocialButton(String iconPath, VoidCallback onPressed) {
     return Container(
       width: 60,
@@ -290,6 +421,8 @@ class _sellerRegistrationState extends State<sellerRegistration> {
                       ),
                     ),
                     const SizedBox(height: 20),
+
+                    // Social login section - Copied from login page to maintain consistency
                     Center(
                       child: Text(
                         "or sign up with",
@@ -299,25 +432,23 @@ class _sellerRegistrationState extends State<sellerRegistration> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 15),
+
+                    // Social login buttons - Styled exactly like the login page
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // For Gmail registration, please use the form.
-                        _buildSocialButton('assets/images/Google.png', () {
-                          Get.snackbar(
-                            "Info",
-                            "To receive a verification email, please complete registration using the form.",
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                        }),
-                        const SizedBox(width: 10),
-                        _buildSocialButton('assets/images/Apple.png', () {}),
-                        const SizedBox(width: 10),
-                        _buildSocialButton('assets/images/Facebook.png', () {}),
+                        _buildSocialButton(
+                            'assets/images/Google.png', _handleGoogleSignUp),
+                        const SizedBox(width: 15),
+                        _buildSocialButton(
+                            'assets/images/Apple.png', _handleAppleSignUp),
+                        const SizedBox(width: 15),
+                        _buildSocialButton('assets/images/Facebook.png',
+                            _handleFacebookSignUp),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 15),
                   ],
                 ),
               ),

@@ -12,7 +12,20 @@
           "package_name": "com.example.reword_frontend"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "422192162403-kfnc0kk9rs683uhu81h6aor5dj73a3bn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.reword_frontend",
+            "certificate_hash": "c2df086a53c00d574857b042b6808c820ab51f99"
+          }
+        },
+        {
+          "client_id": "422192162403-7n7ntde8v6sa97d4uh3c0rlhsje03kf0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBI_cWsPDMmpyLTxCTLnTAVxpDrJn_IQfc"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "422192162403-7n7ntde8v6sa97d4uh3c0rlhsje03kf0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "422192162403-1gcp98sm3tje3s7a00477p18mnkrfrti.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rewordFrontend"
+              }
+            }
+          ]
         }
       }
     }

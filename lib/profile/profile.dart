@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../bespoke/bespoke_experience.dart';
+import '../seller/redeemvoucher/redeem_voucher_page.dart';
 import '../seller/sellernavigationbar/seller_navigation_bar.dart';
 import '../seller/sellerreigistration/sellerprofile_update.dart';
 import '../subcription/subscription_page.dart';
+import '../privacy_policy/privacy_policy.dart'; // Add this import
+import '../forgotpassword/forgot_Pass.dart'; // Add this import
 import 'profile_controller.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -81,11 +84,15 @@ class ProfilePage extends StatelessWidget {
             _buildMenuItem(Icons.edit, "Edit Profile", () {
               Get.to(() => ProfileUpdateSeller());
             }),
-            _buildMenuItem(Icons.settings, "General Settings", () {
-              Get.snackbar("Settings", "General settings clicked");
+            _buildMenuItem(Icons.confirmation_number, "Redeem Voucher", () {
+              // Updated to navigate to the new page
+              Get.to(() => RedeemVoucherPage());
             }),
-            _buildMenuItem(Icons.security, "Account Security", () {
-              Get.snackbar("Security", "Account security clicked");
+            _buildMenuItem(Icons.security, "Privacy & Terms", () {
+              Get.to(() => const LegalPagesScreen());
+            }),
+            _buildMenuItem(Icons.lock_reset, "Reset Password", () {
+              Get.to(() => ForgotPasswordScreen());
             }),
             SizedBox(height: 10),
             _buildMenuItem(Icons.logout, "Sign Out", () {

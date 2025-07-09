@@ -6,6 +6,8 @@ import 'package:reword_frontend/user/userreg/userregistration.dart';
 import 'package:reword_frontend/login/service/auth_service.dart';
 import 'package:reword_frontend/login/service/user_service.dart';
 import 'package:reword_frontend/login/service/google_auth_service.dart';
+import 'package:reword_frontend/login/service/facebook_auth_service.dart'; // Add this import
+import 'package:reword_frontend/privacy_policy/privacy_policy.dart';
 
 class logain2 extends StatefulWidget {
   const logain2({super.key});
@@ -20,9 +22,12 @@ class _logain2State extends State<logain2> {
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   final GoogleAuthService _googleAuthService = Get.find<GoogleAuthService>();
+  final FacebookAuthService _facebookAuthService =
+      Get.find<FacebookAuthService>(); // Add this
 
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isFacebookLoading = false; // Add this
   bool _termsAccepted = false;
 
   @override
@@ -85,7 +90,7 @@ class _logain2State extends State<logain2> {
     }
   }
 
-  // Google sign-in handler
+  // Google sign-in handler - updated to use Firebase
   Future<void> _handleGoogleSignIn() async {
     if (!_termsAccepted) {
       Get.snackbar(
@@ -101,8 +106,15 @@ class _logain2State extends State<logain2> {
     });
 
     try {
-      await _googleAuthService.signInWithGoogle();
-      // Navigation is handled by GoogleAuthService
+      final result = await _authService.signInWithGoogle();
+
+      if (result != null && result.containsKey('error')) {
+        Get.snackbar(
+          "Google Sign-In Error",
+          result['error'],
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } catch (e) {
       print("Google Sign-in error: $e");
       Get.snackbar(
@@ -113,6 +125,45 @@ class _logain2State extends State<logain2> {
     } finally {
       setState(() {
         _isGoogleLoading = false;
+      });
+    }
+  }
+
+  // Facebook sign-in handler
+  Future<void> _handleFacebookSignIn() async {
+    if (!_termsAccepted) {
+      Get.snackbar(
+        "Terms Not Accepted",
+        "You must accept the terms and conditions to sign in with Facebook",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    setState(() {
+      _isFacebookLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithFacebook();
+
+      if (result != null && result.containsKey('error')) {
+        Get.snackbar(
+          "Facebook Sign-In Error",
+          result['error'],
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      print("Facebook Sign-in error: $e");
+      Get.snackbar(
+        "Facebook Sign-In Error",
+        "Failed to sign in with Facebook. Please try again.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      setState(() {
+        _isFacebookLoading = false;
       });
     }
   }
@@ -238,9 +289,16 @@ class _logain2State extends State<logain2> {
                           ),
                           const SizedBox(width: 5),
                           Expanded(
-                            child: Text(
-                              "I agree to the Terms & Conditions",
-                              style: TextStyle(color: Colors.grey[700]),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  Get.to(() => const LegalPagesScreen()),
+                              child: Text(
+                                "I agree to the Terms & Conditions",
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -305,7 +363,10 @@ class _logain2State extends State<logain2> {
                           _buildSocialButton('assets/images/Apple.png', () {}),
                           const SizedBox(width: 15),
                           _buildSocialButton(
-                              'assets/images/Facebook.png', () {}),
+                            'assets/images/Facebook.png',
+                            _handleFacebookSignIn,
+                            isLoading: _isFacebookLoading,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),

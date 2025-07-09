@@ -250,7 +250,7 @@ class VoucherDashboard extends StatelessWidget {
                                     context, 'Add new Voucher', 1),
                                 const SizedBox(width: 8),
                                 _buildMetricButton(
-                                    context, 'Expired Voucher', 2),
+                                    context, 'Expired Vouchers', 2),
                               ],
                             ),
                           ),
@@ -304,7 +304,8 @@ class VoucherDashboard extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'Loading ${controller.isExperiencesSelected.value ? 'Experiences' : 'Excursions'}...',
+                                  // Fix: Show the category we're switching TO, not the current one
+                                  'Loading ${!controller.isExperiencesSelected.value ? 'Experiences' : 'Excursions'}...',
                                   style: const TextStyle(
                                     color: Colors.teal,
                                     fontSize: 16,
