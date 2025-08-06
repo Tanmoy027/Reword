@@ -87,7 +87,7 @@ class _UserNavigationBarState extends State<UserNavigationBar> {
         items: [
           _buildNavItem(Icons.home_outlined, Icons.home, "Home", 0),
           _buildNavItem(Icons.confirmation_number_outlined,
-              Icons.confirmation_number, "Order", 1),
+              Icons.confirmation_number, "Your Voucher", 1),
           _buildNavItem(Icons.favorite_border, Icons.favorite, "Saved", 2),
           _buildNavItem(Icons.person_outline, Icons.person, "Profile", 3),
         ],

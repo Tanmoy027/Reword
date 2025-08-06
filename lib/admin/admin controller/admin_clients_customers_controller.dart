@@ -116,6 +116,77 @@ class AdminClientsCustomersController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white);
   }
+
+  // Add delete seller functionality
+  Future<void> deleteSeller(String sellerId, String sellerName) async {
+    try {
+      String? token = await userService.getToken();
+      if (token != null) {
+        final response = await http.delete(
+          Uri.parse(
+              'https://voucher-app-backend.vercel.app/api/admin/delete-seller/$sellerId'),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+
+        if (response.statusCode == 200) {
+          // Remove from local lists
+          clients.removeWhere((client) => client.sellerId == sellerId);
+          customers.removeWhere((customer) => customer.sellerId == sellerId);
+          sellers.removeWhere((seller) => seller.sellerId == sellerId);
+
+          Get.snackbar("Success", "$sellerName has been deleted successfully!",
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.green,
+              colorText: Colors.white);
+        } else {
+          print('Failed to delete seller: ${response.statusCode}');
+          print('Response body: ${response.body}');
+          Get.snackbar('Error', 'Failed to delete seller',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.red,
+              colorText: Colors.white);
+        }
+      } else {
+        Get.snackbar('Error', 'Authentication required',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white);
+      }
+    } catch (e) {
+      print('Error deleting seller: $e');
+      Get.snackbar('Error', 'An error occurred while deleting seller',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+    }
+  }
+
+  // Show confirmation dialog before deleting
+  void showDeleteConfirmation(Client client) {
+    Get.dialog(
+      AlertDialog(
+        title: Text('Delete Seller'),
+        content: Text(
+            'Are you sure you want to delete ${client.name}? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              deleteSeller(client.sellerId, client.name);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class Seller {

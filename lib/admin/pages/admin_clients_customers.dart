@@ -126,9 +126,11 @@ class AdminClientsCustomersPage extends StatelessWidget {
                                         Row(
                                           children: [
                                             IconButton(
-                                              icon: const Icon(Icons.settings),
+                                              icon: const Icon(Icons.delete),
                                               onPressed: () {
-                                                // Handle settings
+                                                controller
+                                                    .showDeleteConfirmation(
+                                                        client);
                                               },
                                             ),
                                           ],

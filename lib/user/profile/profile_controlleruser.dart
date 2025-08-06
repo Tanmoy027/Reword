@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:reword_frontend/login/service/auth_service.dart';
@@ -140,6 +142,108 @@ class ProfileControlleruser extends GetxController {
       Get.offAll(() => ChoicePage());
     } else {
       Get.snackbar("Error", "Logout failed. Please try again.");
+    }
+  }
+
+  void deleteAccount() async {
+    try {
+      final token = await _userService.getToken();
+      if (token == null || token.isEmpty) {
+        Get.snackbar("Error", "You are not logged in");
+        return;
+      }
+
+      // Set role as buyer by default for this profile page
+      final userRole = "buyer"; // Setting default role as buyer
+
+      // Remove the Get.defaultDialog and proceed directly with account deletion
+      Get.dialog(
+        Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      final url = Uri.parse(
+          "https://voucher-app-backend.vercel.app/api/auth/profile/delete");
+
+      print("Attempting to delete account with URL: $url");
+      print(
+          "Using auth token: ${token.substring(0, min(10, token.length))}...");
+      print("User role: $userRole"); // Should be 'buyer' for regular users
+
+      try {
+        // Send the delete request with authorization token
+        // We'll include the role in the URL as a query parameter instead
+        final urlWithRole = Uri.parse(
+            "${url.toString()}?role=$userRole"); // Add role as query parameter
+
+        final response = await http.delete(
+          urlWithRole,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token'
+          },
+        );
+
+        Get.back(); // Close loading dialog
+
+        print("Delete account response status: ${response.statusCode}");
+        print("Delete account response body: ${response.body}");
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          try {
+            final data = json.decode(response.body);
+            // The success flag might be different based on your backend response
+            if (data["message"] != null && !data.containsKey("error")) {
+              await _userService.clearUserData(); // Clear local user data
+              Get.offAll(() => ChoicePage()); // Navigate to login/choice page
+              Get.snackbar(
+                  "Success", "Your account has been deleted successfully");
+            } else {
+              Get.snackbar(
+                  "Error",
+                  data["message"] ??
+                      data["error"] ??
+                      "Failed to delete account: Server indicated failure");
+            }
+          } catch (parseError) {
+            print("Error parsing response: $parseError");
+            // Even if we can't parse the response, assume success if status code is 200
+            await _userService.clearUserData();
+            Get.offAll(() => ChoicePage());
+            Get.snackbar(
+                "Success", "Your account has been deleted successfully");
+          }
+        } else if (response.statusCode == 400) {
+          // Handle 400 error - usually for invalid role
+          Get.snackbar("Error", "Invalid user role. Please contact support.");
+        } else if (response.statusCode == 401) {
+          Get.snackbar("Authentication Error",
+              "You are not authorized to perform this action. Please log in again.");
+        } else if (response.statusCode == 404) {
+          // Handle 404 - user not found in the database
+          Get.snackbar("Error",
+              "User account not found. It may have already been deleted.");
+        } else {
+          String errorBody = "No response body";
+          try {
+            errorBody = response.body;
+            final errorData = json.decode(errorBody);
+            errorBody = errorData["message"] ?? errorData["error"] ?? errorBody;
+          } catch (e) {
+            // Use the raw error body if parsing fails
+          }
+
+          Get.snackbar("Error",
+              "Failed to delete account. Status: ${response.statusCode}, Details: $errorBody");
+        }
+      } catch (networkError) {
+        Get.back(); // Make sure to close the dialog even if there's an error
+        print("Network error during account deletion: $networkError");
+        Get.snackbar("Network Error",
+            "Could not connect to the server. Please check your internet connection and try again.");
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An error occurred: $e");
     }
   }
 }

@@ -71,30 +71,42 @@ class AdminNotificationPage extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 12),
-                    Obx(() => CheckboxListTile(
+
+                    // All Users Radio
+                    Obx(() => RadioListTile<String>(
                           title: Text("All Users"),
-                          value: controller.allUsers.value,
-                          onChanged: controller.toggleAllUsers,
+                          value: 'all',
+                          groupValue: controller.selectedRecipient.value,
+                          onChanged: (value) =>
+                              controller.selectRecipient(value!),
                           contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: const Color(0xFF158482),
                         )),
+
                     Divider(height: 1),
-                    Obx(() => CheckboxListTile(
+
+                    // Buyers Only Radio
+                    Obx(() => RadioListTile<String>(
                           title: Text("Buyers Only"),
-                          value: controller.buyerUsers.value,
-                          onChanged: controller.toggleBuyerUsers,
+                          value: 'buyers',
+                          groupValue: controller.selectedRecipient.value,
+                          onChanged: (value) =>
+                              controller.selectRecipient(value!),
                           contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          enabled: !controller.allUsers.value,
+                          activeColor: const Color(0xFF158482),
                         )),
+
                     Divider(height: 1),
-                    Obx(() => CheckboxListTile(
+
+                    // Sellers Only Radio
+                    Obx(() => RadioListTile<String>(
                           title: Text("Sellers Only"),
-                          value: controller.sellerUsers.value,
-                          onChanged: controller.toggleSellerUsers,
+                          value: 'sellers',
+                          groupValue: controller.selectedRecipient.value,
+                          onChanged: (value) =>
+                              controller.selectRecipient(value!),
                           contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          enabled: !controller.allUsers.value,
+                          activeColor: const Color(0xFF158482),
                         )),
                   ],
                 ),
@@ -117,7 +129,7 @@ class AdminNotificationPage extends StatelessWidget {
                   ],
                 ),
                 child: TextField(
-                  controller: controller.titleController, // Bind controller
+                  controller: controller.titleController,
                   decoration: InputDecoration(
                     hintText: "Notification Title",
                     border: OutlineInputBorder(
@@ -146,7 +158,7 @@ class AdminNotificationPage extends StatelessWidget {
                   ],
                 ),
                 child: TextField(
-                  controller: controller.messageController, // Bind controller
+                  controller: controller.messageController,
                   maxLines: 5,
                   decoration: InputDecoration(
                     hintText: "Type your notification message here...",
@@ -159,43 +171,7 @@ class AdminNotificationPage extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: 20),
-
-              // Error message
-              Obx(() => controller.errorMessage.value.isNotEmpty
-                  ? Container(
-                      padding: EdgeInsets.all(12),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red[300]!),
-                      ),
-                      child: Text(
-                        controller.errorMessage.value,
-                        style: TextStyle(color: Colors.red[800]),
-                      ),
-                    )
-                  : SizedBox.shrink()),
-
-              // Success message
-              Obx(() => controller.successMessage.value.isNotEmpty
-                  ? Container(
-                      padding: EdgeInsets.all(12),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green[300]!),
-                      ),
-                      child: Text(
-                        controller.successMessage.value,
-                        style: TextStyle(color: Colors.green[800]),
-                      ),
-                    )
-                  : SizedBox.shrink()),
-
-              SizedBox(height: 20),
+              SizedBox(height: 30),
 
               // Send button
               SizedBox(
@@ -206,14 +182,17 @@ class AdminNotificationPage extends StatelessWidget {
                           ? null
                           : controller.sendNotification,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color(0xFF158482),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         disabledBackgroundColor: Colors.grey,
                       ),
                       child: controller.isLoading.value
-                          ? CircularProgressIndicator(color: Colors.white)
+                          ? CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
                           : Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -221,7 +200,11 @@ class AdminNotificationPage extends StatelessWidget {
                                 SizedBox(width: 8),
                                 Text(
                                   "Send Notification",
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
