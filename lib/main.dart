@@ -52,7 +52,7 @@ void main() async {
 
   // Initialize Stripe
   Stripe.publishableKey =
-      'pk_test_51QxS91GUzHamDIjssKS2Xtp3C8owpnakSaowmx1Tp0EyVypYPSxMI3A9BcijS3YaY7ghrUMb1rz5dpF9ocNnD1it00HkZVUkdo';
+      'API KEY';
   await Stripe.instance.applySettings();
 
   // Create a UserService instance and register it with GetX
