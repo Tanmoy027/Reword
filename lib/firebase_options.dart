@@ -40,49 +40,5 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCKFQRPqsdjrhVTUo6bu9zmKkcwQe4dUmU',
-    appId: '1:422192162403:web:ac7c6219c899899654fa56',
-    messagingSenderId: '422192162403',
-    projectId: 'reword-3',
-    authDomain: 'reword-3.firebaseapp.com',
-    storageBucket: 'reword-3.firebasestorage.app',
-    measurementId: 'G-6STT4BY6BS',
-  );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBI_cWsPDMmpyLTxCTLnTAVxpDrJn_IQfc',
-    appId: '1:422192162403:android:1057fa74a9ebda4754fa56',
-    messagingSenderId: '422192162403',
-    projectId: 'reword-3',
-    storageBucket: 'reword-3.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBW2LS0PFNbDvyLh4i2C6mnZUHQ6yP7mtE',
-    appId: '1:422192162403:ios:e4b20f0b0b9b384954fa56',
-    messagingSenderId: '422192162403',
-    projectId: 'reword-3',
-    storageBucket: 'reword-3.firebasestorage.app',
-    iosBundleId: 'com.example.rewordFrontend',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBW2LS0PFNbDvyLh4i2C6mnZUHQ6yP7mtE',
-    appId: '1:422192162403:ios:e4b20f0b0b9b384954fa56',
-    messagingSenderId: '422192162403',
-    projectId: 'reword-3',
-    storageBucket: 'reword-3.firebasestorage.app',
-    iosBundleId: 'com.example.rewordFrontend',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCKFQRPqsdjrhVTUo6bu9zmKkcwQe4dUmU',
-    appId: '1:422192162403:web:92b4885624cb2d1e54fa56',
-    messagingSenderId: '422192162403',
-    projectId: 'reword-3',
-    authDomain: 'reword-3.firebaseapp.com',
-    storageBucket: 'reword-3.firebasestorage.app',
-    measurementId: 'G-E5M5NLDPJW',
-  );
 }
